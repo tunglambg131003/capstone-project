@@ -54,7 +54,7 @@ export const fileSearchTool = tool({
     query: z.string().describe('The search query to find relevant answers from files.')
   }),
   execute: async ({ query }) => {
-    const results = await fetchFileSearch({ query, vectorStoreId: "vs_67f734ff7a10819195491f92be6adc4d" });
+    const results = await fetchFileSearch({ query, vectorStoreId: process.env.VECTOR_STORE_ID! });
 
     console.log(results)
 
