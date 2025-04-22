@@ -162,6 +162,10 @@ const PurePreviewMessage = ({
                     >
                       {toolName === 'getWeather' ? (
                         <Weather />
+                      ) : toolName === 'fileSearch' ? (
+                        <div className="p-4 border rounded-md bg-gray-50">
+                          <p>Searching files with query: {args.query}</p>
+                        </div>
                       ) : toolName === 'createDocument' ? (
                         <DocumentPreview isReadonly={isReadonly} args={args} />
                       ) : toolName === 'updateDocument' ? (
@@ -184,9 +188,18 @@ const PurePreviewMessage = ({
                 if (state === 'result') {
                   const { result } = toolInvocation;
 
+                  console.log(123, result)
+
                   return (
                     <div key={toolCallId}>
-                      {toolName === 'getWeather' ? (
+                      {toolName === 'fileSearch' ? (
+        <div>
+          <h4 className="font-bold mb-2">File Search Results:</h4>
+          <div>
+            <Markdown>{typeof result === 'string' ? result : JSON.stringify(result)}</Markdown> {/* Ensure result is a string */}
+          </div>
+        </div>
+      ): toolName === 'getWeather' ? (
                         <Weather weatherAtLocation={result} />
                       ) : toolName === 'createDocument' ? (
                         <DocumentPreview
