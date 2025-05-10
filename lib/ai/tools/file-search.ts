@@ -15,7 +15,10 @@ export const fetchFileSearch = async ({ query, vectorStoreId }: { query: string;
       type: "file_search",
       vector_store_ids: [vectorStoreId],
     }],
+    tool_choice: "required",
+    parallel_tool_calls: false
   });
+  console.log('File search response:', response);
 
   const textAnswer = response.output_text;
 
@@ -28,8 +31,11 @@ export const fetchFileSearch = async ({ query, vectorStoreId }: { query: string;
     const webResponse = await openai.responses.create({
       model: "gpt-4.1",
       input: formattedQuery,
-      tools: [{ type: "web_search_preview" }]
+      tools: [{ type: "web_search_preview" }],
+      tool_choice: "required",
+      parallel_tool_calls: false
     });
+    console.log('Web search response:', webResponse);
 
     return webResponse.output_text;
   }
@@ -44,7 +50,7 @@ export const fileSearchTool = tool({
   }),
   execute: async ({ query }) => {
     const results = await fetchFileSearch({ query, vectorStoreId: process.env.VECTOR_STORE_ID! });
-
+    console.log('File search results:', results);
     return results
   },
 });
