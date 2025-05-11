@@ -6,7 +6,7 @@ import { toast } from 'sonner';
 import { useArtifact } from '@/hooks/use-artifact';
 
 const getActionText = (
-  type: 'create' | 'update' | 'request-suggestions' | 'file-search', 
+  type: 'create' | 'update' | 'request-suggestions' | 'file-search',
   tense: 'present' | 'past',
 ) => {
   switch (type) {
@@ -77,9 +77,9 @@ function PureDocumentToolResult({
           <MessageIcon />
         ) : null}
       </div>
-      {/* <div className="text-left">
+      <div className="text-left">
         {`${getActionText(type, 'past')} "${result.title}"`}
-      </div> */}
+      </div>
     </button>
   );
 }

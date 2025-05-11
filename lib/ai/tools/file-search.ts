@@ -23,7 +23,7 @@ export const fetchFileSearch = async ({ query, vectorStoreId }: { query: string;
   const textAnswer = response.output_text;
 
   if (textAnswer === "DENIED") {
-    return "I'm sorry, but I can only assist with questions related to VinUni or university-related topics."
+    return "I'm sorry, but I can only assist with questions related to VinUni-related topics."
   }
 
   if (textAnswer === "NOT_FOUND") {

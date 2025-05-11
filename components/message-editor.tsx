@@ -9,6 +9,7 @@ import { UseChatHelpers } from '@ai-sdk/react';
 
 export type MessageEditorProps = {
   message: Message;
+  prevMessage: string;
   setMode: Dispatch<SetStateAction<'view' | 'edit'>>;
   setMessages: UseChatHelpers['setMessages'];
   reload: UseChatHelpers['reload'];
@@ -16,13 +17,13 @@ export type MessageEditorProps = {
 
 export function MessageEditor({
   message,
+  prevMessage,
   setMode,
   setMessages,
   reload,
 }: MessageEditorProps) {
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
-
-  const [draftContent, setDraftContent] = useState<string>(message.content);
+  const [draftContent, setDraftContent] = useState<string>(prevMessage);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {

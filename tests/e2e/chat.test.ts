@@ -138,4 +138,32 @@ test.describe('chat activity', () => {
     await assistantMessage.downvote();
     await chatPage.isVoteComplete();
   });
+
+  test('auto-scrolls to bottom after submitting new messages', async () => {
+    await chatPage.sendMultipleMessages(5, (i) => `filling message #${i}`);
+    await chatPage.waitForScrollToBottom();
+  });
+
+  test('scroll button appears when user scrolls up, hides on click', async () => {
+    await chatPage.sendMultipleMessages(5, (i) => `filling message #${i}`);
+    await expect(chatPage.scrollToBottomButton).not.toBeVisible();
+
+    await chatPage.scrollToTop();
+    await expect(chatPage.scrollToBottomButton).toBeVisible();
+
+    await chatPage.scrollToBottomButton.click();
+    await chatPage.waitForScrollToBottom();
+    await expect(chatPage.scrollToBottomButton).not.toBeVisible();
+  });
+
+  test('Create message from url query', async ({ page }) => {
+    await page.goto('/?query=Why is the sky blue?');
+    const userMessage = await chatPage.getRecentUserMessage();
+    expect(userMessage.content).toBe('Why is the sky blue?');
+
+    await chatPage.isGenerationComplete();
+
+    const assistantMessage = await chatPage.getRecentAssistantMessage();
+    expect(assistantMessage.content).toContain("It's just blue duh!");
+  });
 });

@@ -1,5 +1,5 @@
 import {
-  UIMessage,
+  type UIMessage,
   appendResponseMessages,
   createDataStreamResponse,
   smoothStream,
@@ -22,10 +22,10 @@ import { generateTitleFromUserMessage } from '../../actions';
 import { createDocument } from '@/lib/ai/tools/create-document';
 import { updateDocument } from '@/lib/ai/tools/update-document';
 import { requestSuggestions } from '@/lib/ai/tools/request-suggestions';
-import { getWeather } from '@/lib/ai/tools/get-weather';
+import { fileSearchTool } from '@/lib/ai/tools/file-search';
 import { isProductionEnvironment } from '@/lib/constants';
 import { myProvider } from '@/lib/ai/providers';
-import { fileSearchTool } from '@/lib/ai/tools/file-search';
+
 
 export const maxDuration = 60;
 
@@ -92,11 +92,20 @@ export async function POST(request: Request) {
               ? []
               : [
                 'fileSearch',
+                'createDocument',
+                'updateDocument',
+                'requestSuggestions',
               ],
           experimental_transform: smoothStream({ chunking: 'word' }),
           experimental_generateMessageId: generateUUID,
           tools: {
             fileSearch: fileSearchTool,
+            createDocument: createDocument({ session, dataStream }),
+            updateDocument: updateDocument({ session, dataStream }),
+            requestSuggestions: requestSuggestions({
+              session,
+              dataStream,
+            }),
           },
           onFinish: async ({ response }) => {
             if (session.user?.id) {

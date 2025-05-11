@@ -171,3 +171,7 @@ export function generateDummyPassword() {
 
   return hash;
 }
+
+export function sanitizeText(text: string) {
+  return text.replace('<has_function_call>', '');
+}
