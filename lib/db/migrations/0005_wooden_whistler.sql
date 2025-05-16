@@ -4,7 +4,8 @@ CREATE TABLE IF NOT EXISTS "Message_v2" (
 	"role" varchar NOT NULL,
 	"parts" json NOT NULL,
 	"attachments" json NOT NULL,
-	"createdAt" timestamp NOT NULL
+	"createdAt" timestamp NOT NULL,
+	"annotations" json NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "Vote_v2" (

@@ -32,6 +32,7 @@ type NewMessageInsert = {
   role: string;
   attachments: any[];
   createdAt: Date;
+  annotations: any[];
 };
 
 type NewVoteInsert = {
@@ -119,6 +120,7 @@ async function createNewTable() {
                   role: message.role,
                   createdAt: message.createdAt,
                   attachments: [],
+                  annotations: message.annotations || [], // Ensure annotations is always an array
                 } as NewMessageInsert;
               } else if (message.role === 'assistant') {
                 return {
@@ -128,6 +130,7 @@ async function createNewTable() {
                   role: message.role,
                   createdAt: message.createdAt,
                   attachments: [],
+                  annotations: message.annotations || [], // Ensure annotations is always an array
                 } as NewMessageInsert;
               }
               return null;
@@ -167,6 +170,7 @@ async function createNewTable() {
           role: msg.role,
           attachments: msg.attachments,
           createdAt: msg.createdAt,
+          annotations: msg.annotations || [], // Ensure annotations is always an array
         }));
 
         await db.insert(message).values(validMessageBatch);

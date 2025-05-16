@@ -170,6 +170,13 @@
           "type": "timestamp",
           "primaryKey": false,
           "notNull": true
+        },
+        "annotations": 
+        {
+          "name": "annotations",
+          "type": "json",
+          "primaryKey": false,
+          "notNull": true
         }
       },
       "indexes": {},

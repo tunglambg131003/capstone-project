@@ -1,5 +1,5 @@
 import {
-  UIMessage,
+  type UIMessage,
   appendResponseMessages,
   createDataStreamResponse,
   smoothStream,
@@ -22,10 +22,20 @@ import { generateTitleFromUserMessage } from '../../actions';
 import { createDocument } from '@/lib/ai/tools/create-document';
 import { updateDocument } from '@/lib/ai/tools/update-document';
 import { requestSuggestions } from '@/lib/ai/tools/request-suggestions';
-import { getWeather } from '@/lib/ai/tools/get-weather';
+import { fileSearchTool } from '@/lib/ai/tools/file-search';
 import { isProductionEnvironment } from '@/lib/constants';
 import { myProvider } from '@/lib/ai/providers';
-import { fileSearchTool } from '@/lib/ai/tools/file-search';
+
+interface FSResult {
+  answer: string;
+  citations: { title: string; url: string }[];
+}
+interface ToolItem {
+  type: string;
+  toolCallId: string;
+  toolName: string;
+  result: FSResult | any;
+}
 
 export const maxDuration = 60;
 
@@ -49,6 +59,7 @@ export async function POST(request: Request) {
 
     const userMessage = getMostRecentUserMessage(messages);
 
+
     if (!userMessage) {
       return new Response('No user message found', { status: 400 });
     }
@@ -67,6 +78,8 @@ export async function POST(request: Request) {
       }
     }
 
+    let citations: { title: string; url: string }[] = [];
+
     await saveMessages({
       messages: [
         {
@@ -76,6 +89,7 @@ export async function POST(request: Request) {
           parts: userMessage.parts,
           attachments: userMessage.experimental_attachments ?? [],
           createdAt: new Date(),
+          annotations: []
         },
       ],
     });
@@ -91,16 +105,33 @@ export async function POST(request: Request) {
             selectedChatModel === 'chat-model-reasoning'
               ? []
               : [
-                  'fileSearch',
-                ],
+                'fileSearch',
+              ],
           experimental_transform: smoothStream({ chunking: 'word' }),
           experimental_generateMessageId: generateUUID,
           tools: {
             fileSearch: fileSearchTool,
           },
+
           onFinish: async ({ response }) => {
             if (session.user?.id) {
               try {
+                const fileSearchMsg = response.messages.find(
+                  m => m.role === 'tool'
+                );
+
+                if (fileSearchMsg) {
+                  const content = fileSearchMsg.content;
+                  const fsResult = content
+                    ? content.find((item: ToolItem) => item.toolName === 'fileSearch')?.result as FSResult
+                    : undefined;
+                  citations = fsResult?.citations || []
+
+                  for (const citation of citations) {
+                    dataStream.writeMessageAnnotation(citation);
+                  }
+                }
+
                 const assistantId = getTrailingMessageId({
                   messages: response.messages.filter(
                     (message) => message.role === 'assistant',
@@ -123,9 +154,9 @@ export async function POST(request: Request) {
                       chatId: id,
                       role: assistantMessage.role,
                       parts: assistantMessage.parts,
-                      attachments:
-                        assistantMessage.experimental_attachments ?? [],
+                      attachments: assistantMessage.experimental_attachments ?? [],
                       createdAt: new Date(),
+                      annotations: citations
                     },
                   ],
                 });
@@ -144,8 +175,11 @@ export async function POST(request: Request) {
 
         result.mergeIntoDataStream(dataStream, {
           sendReasoning: true,
+          experimental_sendFinish: true,
+          sendSources: true
         });
       },
+
       onError: () => {
         return 'Oops, an error occurred!';
       },

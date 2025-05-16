@@ -12,13 +12,14 @@ import { MessageActions } from './message-actions';
 import { PreviewAttachment } from './preview-attachment';
 import { Weather } from './weather';
 import equal from 'fast-deep-equal';
-import { cn } from '@/lib/utils';
+import { cn, sanitizeText } from '@/lib/utils';
 import { Button } from './ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from './ui/tooltip';
 import { MessageEditor } from './message-editor';
 import { DocumentPreview } from './document-preview';
 import { MessageReasoning } from './message-reasoning';
-import { UseChatHelpers } from '@ai-sdk/react';
+import type { UseChatHelpers } from '@ai-sdk/react';
+import { Annotation } from '@/lib/artifacts/server';
 
 const PurePreviewMessage = ({
   chatId,
@@ -28,6 +29,7 @@ const PurePreviewMessage = ({
   setMessages,
   reload,
   isReadonly,
+  requiresScrollPadding,
 }: {
   chatId: string;
   message: UIMessage;
@@ -36,7 +38,11 @@ const PurePreviewMessage = ({
   setMessages: UseChatHelpers['setMessages'];
   reload: UseChatHelpers['reload'];
   isReadonly: boolean;
+  requiresScrollPadding: boolean;
 }) => {
+
+
+
   const [mode, setMode] = useState<'view' | 'edit'>('view');
 
   return (
@@ -65,25 +71,29 @@ const PurePreviewMessage = ({
             </div>
           )}
 
-          <div className="flex flex-col gap-4 w-full">
-            {message.experimental_attachments && (
-              <div
-                data-testid={`message-attachments`}
-                className="flex flex-row justify-end gap-2"
-              >
-                {message.experimental_attachments.map((attachment) => (
-                  <PreviewAttachment
-                    key={attachment.url}
-                    attachment={attachment}
-                  />
-                ))}
-              </div>
-            )}
+          <div
+            className={cn('flex flex-col gap-4 w-full', {
+              'min-h-96': message.role === 'assistant' && requiresScrollPadding,
+            })}
+          >
+            {message.experimental_attachments &&
+              message.experimental_attachments.length > 0 && (
+                <div
+                  data-testid={`message-attachments`}
+                  className="flex flex-row justify-end gap-2"
+                >
+                  {message.experimental_attachments.map((attachment) => (
+                    <PreviewAttachment
+                      key={attachment.url}
+                      attachment={attachment}
+                    />
+                  ))}
+                </div>
+              )}
 
             {message.parts?.map((part, index) => {
               const { type } = part;
               const key = `message-${message.id}-part-${index}`;
-
               if (type === 'reasoning') {
                 return (
                   <MessageReasoning
@@ -95,7 +105,7 @@ const PurePreviewMessage = ({
               }
 
               if (type === 'text') {
-                if (mode === 'view') {
+                if (mode === 'view' && part.text.trim().length > 0) {
                   return (
                     <div key={key} className="flex flex-row gap-2 items-start">
                       {message.role === 'user' && !isReadonly && (
@@ -123,7 +133,33 @@ const PurePreviewMessage = ({
                             message.role === 'user',
                         })}
                       >
-                        <Markdown>{part.text}</Markdown>
+                        <Markdown>{sanitizeText(part.text)}</Markdown>
+
+                        {message.annotations && message.annotations.length > 0 && (
+                          <div className="mt-2 space-y-1 text-sm">
+                            <div className="font-bold">REFERENCES:</div>
+                            <ul className="space-y-1">
+                              {message.annotations.map(
+                                (annotation, i) =>
+                                  annotation && (
+                                    <li key={i}>
+                                      <span className="mr-1">[{i + 1}]</span>
+                                      <span>
+                                        {(annotation as Annotation).title} — Retrieved {new Date(message.createdAt ?? Date.now()).toLocaleDateString('en-US')} from
+                                      </span>              <a
+                                        href={(annotation as Annotation).url}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="text-blue-600 dark:text-blue-400 hover:underline">
+                                        {(annotation as Annotation).url}
+                                      </a>
+                                    </li>
+                                  )
+                              )}
+                            </ul>
+                          </div>
+                        )}
+
                       </div>
                     </div>
                   );
@@ -137,6 +173,7 @@ const PurePreviewMessage = ({
                       <MessageEditor
                         key={message.id}
                         message={message}
+                        prevMessage={part.text}
                         setMode={setMode}
                         setMessages={setMessages}
                         reload={reload}
@@ -162,10 +199,6 @@ const PurePreviewMessage = ({
                     >
                       {toolName === 'getWeather' ? (
                         <Weather />
-                      ) : toolName === 'fileSearch' ? (
-                        <div className="p-4 border rounded-md bg-gray-50">
-                          <p>Searching files with query: {args.query}</p>
-                        </div>
                       ) : toolName === 'createDocument' ? (
                         <DocumentPreview isReadonly={isReadonly} args={args} />
                       ) : toolName === 'updateDocument' ? (
@@ -188,18 +221,13 @@ const PurePreviewMessage = ({
                 if (state === 'result') {
                   const { result } = toolInvocation;
 
-                  console.log(123, result)
+                  if (toolName === 'fileSearch') {
+                    return null;
+                  }
 
                   return (
                     <div key={toolCallId}>
-                      {toolName === 'fileSearch' ? (
-        <div>
-          <h4 className="font-bold mb-2">File Search Results:</h4>
-          <div>
-            <Markdown>{typeof result === 'string' ? result : JSON.stringify(result)}</Markdown> {/* Ensure result is a string */}
-          </div>
-        </div>
-      ): toolName === 'getWeather' ? (
+                      {toolName === 'getWeather' ? (
                         <Weather weatherAtLocation={result} />
                       ) : toolName === 'createDocument' ? (
                         <DocumentPreview
@@ -248,6 +276,7 @@ export const PreviewMessage = memo(
   (prevProps, nextProps) => {
     if (prevProps.isLoading !== nextProps.isLoading) return false;
     if (prevProps.message.id !== nextProps.message.id) return false;
+    if (prevProps.requiresScrollPadding !== nextProps.requiresScrollPadding) return false;
     if (!equal(prevProps.message.parts, nextProps.message.parts)) return false;
     if (!equal(prevProps.vote, nextProps.vote)) return false;
 
@@ -261,7 +290,7 @@ export const ThinkingMessage = () => {
   return (
     <motion.div
       data-testid="message-assistant-loading"
-      className="w-full mx-auto max-w-3xl px-4 group/message "
+      className="w-full mx-auto max-w-3xl px-4 group/message min-h-96"
       initial={{ y: 5, opacity: 0 }}
       animate={{ y: 0, opacity: 1, transition: { delay: 1 } }}
       data-role={role}

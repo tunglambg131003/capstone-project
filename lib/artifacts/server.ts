@@ -8,6 +8,11 @@ import { Document } from '../db/schema';
 import { saveDocument } from '../db/queries';
 import { Session } from 'next-auth';
 
+export type Annotation = {
+  url: string;
+  title: string;
+};
+
 export interface SaveDocumentProps {
   id: string;
   title: string;
