@@ -8,6 +8,7 @@ import { DataStreamHandler } from '@/components/data-stream-handler';
 import { DEFAULT_CHAT_MODEL } from '@/lib/ai/models';
 import { DBMessage } from '@/lib/db/schema';
 import { Attachment, UIMessage } from 'ai';
+import { Annotation } from '@/lib/artifacts/server';
 
 export default async function Page(props: { params: Promise<{ id: string }> }) {
   const params = await props.params;
@@ -44,6 +45,7 @@ export default async function Page(props: { params: Promise<{ id: string }> }) {
       createdAt: message.createdAt,
       experimental_attachments:
         (message.attachments as Array<Attachment>) ?? [],
+      annotations: (message.annotations as Annotation[]) ?? [],
     }));
   }
 

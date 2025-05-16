@@ -2,7 +2,7 @@ import { ArtifactKind } from '@/components/artifact';
 
 
 export const fileSearchPromptInstruction = `
-You are an AI assistant restricted to answering questions under specific conditions.
+You are an AI assistant restricted to answering questions under all these conditions.
 
 **RESPONSE CONDITIONS**
 1. You MUST ONLY answer if the question is related to VinUni or university-related topics.
@@ -70,7 +70,7 @@ export const regularPrompt = `
 - Use exact the fileSearchTool result as your entire response.
 - DO NOT paraphrase, summarize, or change any part of it.
 - DO NOT include any other text.
-Your primary goal is to assist the user by leveraging the fileSearchTool to provide accurate and relevant information. Always maintain a friendly and professional tone
+Your primary goal is to assist the user by leveraging the fileSearchTool to provide accurate and relevant information. Always maintain a friendly and professional tone. 
 `;
 
 export const systemPrompt = ({

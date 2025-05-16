@@ -19,6 +19,7 @@ import { MessageEditor } from './message-editor';
 import { DocumentPreview } from './document-preview';
 import { MessageReasoning } from './message-reasoning';
 import type { UseChatHelpers } from '@ai-sdk/react';
+import { Annotation } from '@/lib/artifacts/server';
 
 const PurePreviewMessage = ({
   chatId,
@@ -40,7 +41,8 @@ const PurePreviewMessage = ({
   requiresScrollPadding: boolean;
 }) => {
 
-  console.log('Rendering message', message);
+
+
   const [mode, setMode] = useState<'view' | 'edit'>('view');
 
   return (
@@ -75,19 +77,19 @@ const PurePreviewMessage = ({
             })}
           >
             {message.experimental_attachments &&
-              message.experimental_attachments.length > 0 &&(
-              <div
-                data-testid={`message-attachments`}
-                className="flex flex-row justify-end gap-2"
-              >
-                {message.experimental_attachments.map((attachment) => (
-                  <PreviewAttachment
-                    key={attachment.url}
-                    attachment={attachment}
-                  />
-                ))}
-              </div>
-            )}
+              message.experimental_attachments.length > 0 && (
+                <div
+                  data-testid={`message-attachments`}
+                  className="flex flex-row justify-end gap-2"
+                >
+                  {message.experimental_attachments.map((attachment) => (
+                    <PreviewAttachment
+                      key={attachment.url}
+                      attachment={attachment}
+                    />
+                  ))}
+                </div>
+              )}
 
             {message.parts?.map((part, index) => {
               const { type } = part;
@@ -132,6 +134,32 @@ const PurePreviewMessage = ({
                         })}
                       >
                         <Markdown>{sanitizeText(part.text)}</Markdown>
+
+                        {message.annotations && message.annotations.length > 0 && (
+                          <div className="mt-2 space-y-1 text-sm">
+                            <div className="font-bold">REFERENCES:</div>
+                            <ul className="space-y-1">
+                              {message.annotations.map(
+                                (annotation, i) =>
+                                  annotation && (
+                                    <li key={i}>
+                                      <span className="mr-1">[{i + 1}]</span>
+                                      <span>
+                                        {(annotation as Annotation).title} — Retrieved {new Date(message.createdAt ?? Date.now()).toLocaleDateString('en-US')} from
+                                      </span>              <a
+                                        href={(annotation as Annotation).url}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="text-blue-600 dark:text-blue-400 hover:underline">
+                                        {(annotation as Annotation).url}
+                                      </a>
+                                    </li>
+                                  )
+                              )}
+                            </ul>
+                          </div>
+                        )}
+
                       </div>
                     </div>
                   );
